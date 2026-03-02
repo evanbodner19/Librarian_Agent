@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env_dir/
+
+# Secrets / config
+.env
+*.key
+*.pem
+config.local.*
+
+# Logs & runtime data
+*.log
+logs/
+*.db
+*.sqlite
+
+# OS / Windows artifacts
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Editor artifacts
+.vscode/
+.idea/
+*.swp
+*~
+
+# Project-specific
+watched_state.json
+test_downloads/
+
+# Claude Code
+CLAUDE.md

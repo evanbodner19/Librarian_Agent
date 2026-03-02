@@ -1,40 +1,35 @@
 # Librarian Agent
 
-A file watcher that monitors your Downloads folder and automatically sorts files to an external hard drive based on file type and extension rules.
+A file watcher that monitors your Downloads folder and automatically sorts files into subfolders based on file type.
 
 ## What it does
 
 - Watches a source folder (e.g. `Downloads`) for new files
-- Sorts files into destination subfolders based on extension/type rules
-- Moves files to an external drive automatically
-- Tracks state to avoid reprocessing files
+- Sorts files into destination subfolders based on extension rules defined in `extension_map.py`
+- Moves files automatically using `shutil.move()`
+- Prints a log of every move to the console
 
 ## Tech stack
 
 - Python 3.x
 - [`watchdog`](https://github.com/gorakhargosh/watchdog) — filesystem event monitoring
-- `python-dotenv` — environment variable management
 
 ## Setup
 
-1. Clone the repo and create a virtual environment:
+1. Install the dependency:
 
    ```bash
-   python -m venv venv
-   source venv/Scripts/activate  # Windows
+   pip install watchdog
    ```
 
-2. Install dependencies:
+2. Update the paths at the top of `main.py`:
 
-   ```bash
-   pip install -r requirements.txt
+   ```python
+   SOURCE_DIR = r"C:\Users\you\Downloads"
+   DEST_DIR   = r"C:\Users\you\Downloads\Sorted"
    ```
 
-3. Create a `.env` file in the project root:
-
-   ```   WATCH_FOLDER=C:/Users/you/Downloads
-   DEST_ROOT=E:/Sorted
-   ```
+3. Add any additional file types to `extension_map.py` as needed.
 
 4. Run:
 
@@ -42,32 +37,23 @@ A file watcher that monitors your Downloads folder and automatically sorts files
    python main.py
    ```
 
+   Stop with `Ctrl+C`.
+
 ## Project structure
 
-```Librarian_Agent/
-├── main.py           # Entry point, starts the file watcher
-├── sorter.py         # Rule-based file categorization by extension
-├── mover.py          # File move logic
-├── config.py         # Path and category configuration
-├── requirements.txt
-├── .env              # Not committed
+```
+Librarian_Agent/
+├── main.py           # Watcher, event handler, and sorting logic
+├── extension_map.py  # Matching dictionary for file extensions
 └── .gitignore
 ```
-
-## Configuration
-
-| Variable | Description |
-|---|---|
-| `WATCH_FOLDER` | Folder to monitor (default: `~/Downloads`) |
-| `DEST_ROOT` | Root of destination drive/folder |
 
 ## Next steps
 
 Replace rule-based sorting with local AI classification using [Ollama](https://ollama.com) (llama3):
 
-- `classifier.py` will send file metadata (name, extension, size) to a local llama3 model via the `ollama` Python SDK
-- The model returns a category, replacing the static extension lookup in `sorter.py`
-- Adds `OLLAMA_MODEL` and `OLLAMA_HOST` config vars
+- A `classifier.py` module will send file metadata to a local llama3 model via the `ollama` Python SDK
+- The model returns a category, replacing the static extension lookup
 - Runs fully offline — no API keys required
 
 ## Status
