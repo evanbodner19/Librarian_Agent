@@ -22,6 +22,7 @@ config.local.*
 # Logs & runtime data
 *.log
 logs/
+librarian.log
 *.db
 *.sqlite
 
@@ -43,3 +44,4 @@ test_downloads/
 
 # Claude Code
 CLAUDE.md
+.claude/

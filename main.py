@@ -39,11 +39,17 @@ class FileHandler(FileSystemEventHandler):
         os.makedirs(subdir_path, exist_ok=True)
 
         # Move the file to the appropriate subdirectory
-        try:
-            shutil.move(file_path, dest_path)
-            print(f"Moved: {file_path} to {dest_path}")
-        except Exception as e:
-            print(f"Error moving {file_path} to {dest_path}: {e}")
+        MAX_RETRIES = 3
+        RETRY_DELAY = 2
+
+        for attempt in range(MAX_RETRIES):
+            time.sleep(RETRY_DELAY)  # Wait before retrying
+            try:
+                shutil.move(file_path, dest_path)
+                print(f"Moved: {file_path} to {dest_path}")
+                break  # Exit the retry loop if successful
+            except Exception as e:
+                print(f"Error moving {file_path} to {dest_path}: {e}")
 
 
 if __name__ == "__main__":
