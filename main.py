@@ -17,39 +17,42 @@ for category, extensions in EXTENSION_MAP.items():
         LOOKUP[ext] = category
 
 class FileHandler(FileSystemEventHandler):
-    def on_created(self, event):
-        if event.is_directory:          # Ignore new directories, return early
-            return
-        
-        # Get the file path and extension
-        file_path = event.src_path
+    def _sort_file(self, file_path):
         _, ext = os.path.splitext(file_path)
-        ext = ext.lower()               # Normalize the extension to lowercase
+        ext = ext.lower()
 
+        # Skip temp download files — the real file arrives via on_moved when complete
+        if ext in ('.crdownload', '.part', '.tmp'):
+            return
 
-        # Determine the category based on the extension, default to 'Other' if not found
         subdir = LOOKUP.get(ext, 'Other')
-        
-        
         filename = os.path.basename(file_path)
         subdir_path = os.path.join(DEST_DIR, subdir)
-        dest_path = os.path.join(DEST_DIR, subdir, filename)
+        dest_path = os.path.join(subdir_path, filename)
 
-        # Ensure the destination subdirectory exists
         os.makedirs(subdir_path, exist_ok=True)
 
-        # Move the file to the appropriate subdirectory
         MAX_RETRIES = 3
         RETRY_DELAY = 2
 
         for attempt in range(MAX_RETRIES):
-            time.sleep(RETRY_DELAY)  # Wait before retrying
+            time.sleep(RETRY_DELAY)
             try:
                 shutil.move(file_path, dest_path)
                 print(f"Moved: {file_path} to {dest_path}")
-                break  # Exit the retry loop if successful
+                break
             except Exception as e:
                 print(f"Error moving {file_path} to {dest_path}: {e}")
+
+    def on_created(self, event):
+        if event.is_directory:
+            return
+        self._sort_file(event.src_path)
+
+    def on_moved(self, event):
+        if event.is_directory:
+            return
+        self._sort_file(event.dest_path)
 
 
 if __name__ == "__main__":
