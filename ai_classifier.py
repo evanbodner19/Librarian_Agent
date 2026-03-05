@@ -1,4 +1,11 @@
 import ollama
+import logging
+
+logger = logging.getLogger('librarian')
+logger.setLevel(logging.INFO)
+handler = logging.FileHandler('logs/ai_poc.log')
+handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logger.addHandler(handler)
 
 def test_connection():
     try:
@@ -19,9 +26,11 @@ def classify(filename, ext, file_size):
                 'content': f"You are a file classifier. Given a file\'s details, return ONLY a single category name from this list: School, Coding, Audio, Video, Personal, Other. Return nothing else — no explanation, just the category name.\n\n File name: {filename}\n Extension: {ext}\n Size: {file_size} bytes"
             }]
         )
-        return response.message.content.strip()
+        category = response.message.content.strip()
+        logger.info(f"Classified file '{filename}' as category: {category}")
+        return category
     except Exception as e:
-        print(f"Failed to classify file: {e}")
+        logger.error(f"Failed to classify file: {e}")
         return "Other"
 
 
