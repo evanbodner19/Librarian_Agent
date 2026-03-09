@@ -1,42 +1,37 @@
 # Librarian Agent
 
-A file watcher that monitors your Downloads folder and automatically sorts files to an external hard drive based on file type and extension rules.
+A file watcher that monitors your Downloads folder and automatically moves files to an external hard drive.
 
 ## What it does
 
-- Watches a source folder (e.g. `Downloads`) for new files
-- Sorts files into destination subfolders based on extension/type rules
-- Moves files to an external drive automatically
-- Tracks state to avoid reprocessing files
+- Watches `SOURCE_DIR` for new files
+- Moves files to `DEST_DIR` on the external drive
+- Skips temp files (`.crdownload`, `.part`, `.tmp`, `.temp`)
+- Retries moves up to 3 times to handle browser-locked files
+- Logs all transfers to `logs\drive_transfer.log`
+- Handles drive-not-connected gracefully — logs a warning and skips
 
 ## Tech stack
 
 - Python 3.x
 - [`watchdog`](https://github.com/gorakhargosh/watchdog) — filesystem event monitoring
-- `python-dotenv` — environment variable management
 
 ## Setup
 
 1. Clone the repo and create a virtual environment:
 
    ```bash
-   python -m venv venv
-   source venv/Scripts/activate  # Windows
+   python -m venv .venv
+   .venv\Scripts\activate
    ```
 
 2. Install dependencies:
 
    ```bash
-   pip install -r requirements.txt
+   pip install watchdog
    ```
 
-3. Create a `.env` file in the project root:
-
-   ```   WATCH_FOLDER=C:/Users/you/Downloads
-   DEST_ROOT=E:/Sorted
-   ```
-
-4. Run:
+3. Run:
 
    ```bash
    python main.py
@@ -44,32 +39,22 @@ A file watcher that monitors your Downloads folder and automatically sorts files
 
 ## Project structure
 
-```Librarian_Agent/
-├── main.py           # Entry point, starts the file watcher
-├── sorter.py         # Rule-based file categorization by extension
-├── mover.py          # File move logic
-├── config.py         # Path and category configuration
-├── requirements.txt
-├── .env              # Not committed
-└── .gitignore
+```
+Librarian_Agent/
+├── main.py       # Watches Downloads and moves files to external drive
+└── logs/
+    └── drive_transfer.log
 ```
 
 ## Configuration
 
+Paths are hardcoded in `main.py`:
+
 | Variable | Description |
 |---|---|
-| `WATCH_FOLDER` | Folder to monitor (default: `~/Downloads`) |
-| `DEST_ROOT` | Root of destination drive/folder |
-
-## Next steps
-
-Replace rule-based sorting with local AI classification using [Ollama](https://ollama.com) (llama3):
-
-- `classifier.py` will send file metadata (name, extension, size) to a local llama3 model via the `ollama` Python SDK
-- The model returns a category, replacing the static extension lookup in `sorter.py`
-- Adds `OLLAMA_MODEL` and `OLLAMA_HOST` config vars
-- Runs fully offline — no API keys required
+| `SOURCE_DIR` | Folder to watch (e.g. your Downloads folder) |
+| `DEST_DIR` | Destination on the external drive (e.g. `O:\Sorted`) |
 
 ## Status
 
-MVP — rule-based sorting.
+`external-drive` branch — raw transfer to external drive, no sorting logic yet. Sorting will be added on merge with `main`.
