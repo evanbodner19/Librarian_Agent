@@ -22,12 +22,18 @@ def add_to_queue(file_path):
     if os.path.dirname(os.path.abspath(file_path)) == os.path.abspath(QUEUE_DIR):
         return
 
-    try:
-        queue_path = os.path.join(QUEUE_DIR, os.path.basename(file_path))
-        shutil.move(file_path, queue_path)
-        logging.info(f"Added to queue: {file_path} -> {queue_path}")
-    except Exception as e:
-        logging.error(f"Failed to add {file_path} to queue due to {e}")
+    for attempt in range(3):
+        try:
+            queue_path = os.path.join(QUEUE_DIR, os.path.basename(file_path))
+            shutil.move(file_path, queue_path)
+            logging.info(f"Added to queue: {file_path} -> {queue_path}")
+            break
+        except Exception as e:
+            if attempt < 2:
+                logging.warning(f"Attempt {attempt + 1} failed to queue {os.path.basename(file_path)} due to {e}")
+                time.sleep(1)
+            else:
+                logging.error(f"Failed to queue {os.path.basename(file_path)} after 3 attempts, skipping due to {e}")
 
 def process_queue():
     os.makedirs(QUEUE_DIR, exist_ok=True)
@@ -63,7 +69,7 @@ def transfer_file(file_path):
         except Exception as e:
             if attempt < 2:
                 logging.warning(f"Attempt {attempt + 1} failed to move {file_path} due to {e}")
-                time.sleep(2)
+                time.sleep(1)
             else:
                 logging.error(f"Failed to move {file_path} after 3 attempts, skipping due to {e}")
 
