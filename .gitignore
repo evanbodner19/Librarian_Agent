@@ -41,6 +41,7 @@ $RECYCLE.BIN/
 # Project-specific
 watched_state.json
 test_downloads/
+queue/
 
 # Claude Code
 CLAUDE.md

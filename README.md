@@ -1,41 +1,47 @@
 # Librarian Agent
 
-A file watcher that monitors your Downloads folder and automatically sorts files into subfolders based on file type. Runs as a Windows background service.
+A file watcher that monitors your Downloads folder, sorts files by type, and moves them to an external hard drive. If the drive isn't connected, files are held in a local queue and transferred automatically when it reconnects. Runs as a Windows background service.
 
 ## What it does
 
-- Watches a source folder (e.g. `Downloads`) for new files
-- Sorts files into destination subfolders based on extension rules defined in `extension_map.py`
-- Moves files automatically using `shutil.move()`
-- Retries moves automatically if a file is still locked by another process
-- Logs every move to a file via NSSM
+- Watches `SOURCE_DIR` for new files
+- Sorts files into `DEST_DIR/<category>/` based on extension rules in `extension_map.py`
+- Skips temp files (`.crdownload`, `.part`, `.tmp`, `.temp`)
+- Retries moves up to 3 times to handle browser-locked files
+- Queues files locally if the drive is not connected, transfers automatically when it reconnects
+- Logs all activity to `logs/librarian.log`
 
 ## Tech stack
 
 - Python 3.x
 - [`watchdog`](https://github.com/gorakhargosh/watchdog) — filesystem event monitoring
+- [`python-dotenv`](https://github.com/theskumar/python-dotenv) — environment variable config
 - [NSSM](https://nssm.cc) — runs the script as a named Windows service
 
 ## Setup
 
-1. Install the dependency:
+1. Clone the repo and create a virtual environment:
 
-   ```powershell
-   pip install watchdog
+   ```bash
+   python -m venv .venv
+   .venv\Scripts\activate
    ```
 
-2. Update the paths at the top of `main.py`:
+2. Install dependencies:
 
-   ```python
-   SOURCE_DIR = r"C:\Users\you\Downloads"
-   DEST_DIR   = r"C:\Users\you\Downloads\Sorted"
+   ```bash
+   pip install watchdog python-dotenv
    ```
 
-3. Add any additional file types to `extension_map.py` as needed.
+3. Copy `.env.example` to `.env` and fill in your paths:
+
+   ```bash
+   cp .env.example .env
+   ```
 
 4. Run directly:
 
-   ```powershell
+   ```bash
    python main.py
    ```
 
@@ -46,15 +52,14 @@ A file watcher that monitors your Downloads folder and automatically sorts files
 Install [NSSM](https://nssm.cc/download) then run as Administrator:
 
 ```powershell
-winget install nssm
 nssm install LibrarianAgent
 ```
 
 In the GUI:
-- **Path:** `C:\Users\you\AppData\Local\Programs\Python\Python312\python.exe`
-- **Startup directory:** `C:\Users\you\Projects\Librarian_Agent`
+- **Path:** `<project_dir>\.venv\Scripts\python.exe`
+- **Startup directory:** `<project_dir>`
 - **Arguments:** `main.py`
-- **I/O → Stdout/Stderr:** `C:\Users\you\Projects\Librarian_Agent\logs\librarian.log`
+- **I/O → Stdout/Stderr:** `<project_dir>\logs\librarian.log`
 
 ```powershell
 nssm set LibrarianAgent AppEnvironmentExtra PYTHONUNBUFFERED=1
@@ -65,14 +70,10 @@ nssm start LibrarianAgent
 
 **Useful commands:**
 ```powershell
-nssm restart LibrarianAgent   # pick up code changes
+nssm restart LibrarianAgent
 nssm stop LibrarianAgent
 nssm status LibrarianAgent
-```
-
-**Watch logs live:**
-```powershell
-Get-Content C:\Users\you\Projects\Librarian_Agent\logs\librarian.log -Wait
+Get-Content logs\librarian.log -Wait
 ```
 
 Find the service under Task Manager → **Services tab**.
@@ -81,20 +82,24 @@ Find the service under Task Manager → **Services tab**.
 
 ```
 Librarian_Agent/
-├── main.py           # Watcher, event handler, and sorting logic
+├── main.py           # Watcher, queue, and transfer logic
 ├── extension_map.py  # File extension to category mapping
-├── logs/             # Runtime logs (not committed)
-└── .gitignore
+├── .env              # Your local config (not committed)
+├── .env.example      # Config template
+├── queue/            # Temporary holding folder when drive is disconnected
+└── logs/
+    └── librarian.log
 ```
 
-## Next steps
+## Configuration
 
-Replace rule-based sorting with local AI classification using [Ollama](https://ollama.com) (llama3):
+Set these in your `.env` file:
 
-- A `classifier.py` module will send file metadata to a local llama3 model via the `ollama` Python SDK
-- The model returns a category, replacing the static extension lookup
-- Runs fully offline — no API keys required
+| Variable | Description |
+|---|---|
+| `SOURCE_DIR` | Folder to watch (e.g. your Downloads folder) |
+| `DEST_DIR` | Destination on the external drive (e.g. `E:\Sorted`) |
 
 ## Status
 
-MVP — rule-based sorting, running as a Windows service.
+MVP — rule-based sorting to external drive with offline queue. Running as a Windows service.
