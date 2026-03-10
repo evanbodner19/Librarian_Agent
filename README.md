@@ -16,30 +16,35 @@ A file watcher that monitors your Downloads folder, sorts files by type, and mov
 - Python 3.x
 - [`watchdog`](https://github.com/gorakhargosh/watchdog) — filesystem event monitoring
 - [`python-dotenv`](https://github.com/theskumar/python-dotenv) — environment variable config
-- [NSSM](https://nssm.cc) — runs the script as a named Windows service
+- Windows Task Scheduler — runs the script automatically on login
 
 ## Setup
 
-1. Clone the repo and create a virtual environment:
+Run the install script from PowerShell (handles venv, dependencies, and task registration):
+
+```powershell
+.\install.ps1
+```
+
+Then edit `.env` with your paths and start the task:
+
+```powershell
+Start-ScheduledTask -TaskName "LibrarianAgent"
+```
+
+**Or manually:**
+
+1. Create a virtual environment and install dependencies:
 
    ```bash
    python -m venv .venv
    .venv\Scripts\activate
-   ```
-
-2. Install dependencies:
-
-   ```bash
    pip install watchdog python-dotenv
    ```
 
-3. Copy `.env.example` to `.env` and fill in your paths:
+2. Copy `.env.example` to `.env` and fill in your paths.
 
-   ```bash
-   cp .env.example .env
-   ```
-
-4. Run directly:
+3. Run directly:
 
    ```bash
    python main.py
@@ -47,36 +52,28 @@ A file watcher that monitors your Downloads folder, sorts files by type, and mov
 
    Stop with `Ctrl+C`.
 
-## Running as a Windows service
+## Running as a background task
 
-Install [NSSM](https://nssm.cc/download) then run as Administrator:
-
-```powershell
-nssm install LibrarianAgent
-```
-
-In the GUI:
-- **Path:** `<project_dir>\.venv\Scripts\python.exe`
-- **Startup directory:** `<project_dir>`
-- **Arguments:** `main.py`
-- **I/O → Stdout/Stderr:** `<project_dir>\logs\librarian.log`
+Register it with Windows Task Scheduler (runs automatically on login, no console window):
 
 ```powershell
-nssm set LibrarianAgent AppEnvironmentExtra PYTHONUNBUFFERED=1
-nssm set LibrarianAgent DisplayName "Librarian Agent"
-nssm set LibrarianAgent Description "Watches Downloads folder and sorts files automatically"
-nssm start LibrarianAgent
+$action = New-ScheduledTaskAction -Execute "<project_dir>\.venv\Scripts\pythonw.exe" -Argument "<project_dir>\main.py" -WorkingDirectory "<project_dir>"
+$trigger = New-ScheduledTaskTrigger -AtLogOn
+$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit 0 -Hidden
+Register-ScheduledTask -TaskName "LibrarianAgent" -Action $action -Trigger $trigger -Settings $settings -Force
 ```
+
+Replace `<project_dir>` with your actual project path.
 
 **Useful commands:**
 ```powershell
-nssm restart LibrarianAgent
-nssm stop LibrarianAgent
-nssm status LibrarianAgent
-Get-Content logs\librarian.log -Wait
+Start-ScheduledTask -TaskName "LibrarianAgent"
+Stop-ScheduledTask -TaskName "LibrarianAgent"
+Get-ScheduledTask -TaskName "LibrarianAgent"   # check status
+Get-Content logs\librarian.log -Wait           # tail logs
 ```
 
-Find the service under Task Manager → **Services tab**.
+Find the task under Task Scheduler → **Task Scheduler Library**.
 
 ## Project structure
 
@@ -102,4 +99,4 @@ Set these in your `.env` file:
 
 ## Status
 
-MVP — rule-based sorting to external drive with offline queue. Running as a Windows service.
+MVP — rule-based sorting to external drive with offline queue. Runs as a Windows scheduled task on login.
